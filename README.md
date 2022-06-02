@@ -1,0 +1,2 @@
+# Blubot
+Personalized Discord Application
