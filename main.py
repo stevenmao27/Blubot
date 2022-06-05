@@ -7,8 +7,12 @@ import time
 import random
 import asyncio
 import datetime
+import os
 
-bot = commands.Bot(command_prefix='$')
+TERMINATION_KEYWORDS = ['stop', 'here', 'ok', 'aqui', 'alright', 'coming', 'oi', 'e']
+
+intents = discord.Intents().all()
+bot = commands.Bot(command_prefix='.', intents=intents)
 
 @bot.event
 async def on_ready():
@@ -21,6 +25,7 @@ async def on_message(msg):
     
     msg_text = msg.content
     
+    #for .spam command
     if msg_text.lower() == 'hi blubot':
         await msg.channel.send('hi ' + msg.author.name + '!')
 
@@ -35,17 +40,17 @@ async def on_message(msg):
     #allows commands
     await bot.process_commands(msg)
 
-#command error
 @bot.event
 async def on_command_error(error, ctx):
     if isinstance(error, commands.CommandNotFound):
-        await ctx.send('you used the command wrong ahaha')
+        await ctx.send('you used the command wrong')
 
 
-
-############################
-####    Bot Commands    ####
-############################
+################################################
+################################################
+############    BOT COMMANDS "."    ############
+################################################
+################################################
 
 #ping
 @bot.command()
@@ -69,10 +74,10 @@ async def spam(ctx, user: discord.User, repeats: int):
 async def bombtimer(ctx, user: discord.User, minutes: int, seconds: int = 0, custom_message: str = ''):
     totalTime = minutes * 60 + seconds
     INIT_MSG = 'Beginning bomb timer on {} in {} minutes and {} seconds\nReply "stop" to terminate the timer' if custom_message == '' else custom_message
-    FAIL_MSG = '{} capped'
+    FAIL_MSG = "{} capped, he's not coming back"
     SUCCESS_MSG = 'Welcome back, {}'
     def isStop(m):
-        if m.content == 'stop':
+        if m.content in TERMINATION_KEYWORDS:
             if m.author == user:
                 return True
             else:
@@ -95,44 +100,10 @@ async def bombtimer(ctx, user: discord.User, minutes: int, seconds: int = 0, cus
     else:
         await ctx.send(SUCCESS_MSG.format(user.mention))
 
-#weather
-@bot.command()
-async def weather(ctx, *args):
-    full_msg = ''
-    houses = {
-        #Basically Missouri City
-        "steven's_house": 'https://api.weather.gov/gridpoints/HGX/56,87/forecast',
-        "jason's_house": 'https://api.weather.gov/gridpoints/HGX/56,87/forecast'
-    }
-    loc_name = "steven's_house"
-    for val in args:
-        if val[:4] == 'days':
-            days = int(val[5:])
-        elif val[:3] == 'loc':
-            loc_name = val[4:]
-        elif val[:5] == 'coods':
-            coordinates = val[6:]
-            temp_req = requests.get('https://api.weather.gov/points/{}'.format(coordinates))
-            temp_r = json.loads(temp_req.text)
-            houses['new_loc'] = temp_r['properties']['forecast']
-            loc_name = 'new_loc'
-    
-    loc = houses[loc_name]
-    req = requests.get(loc)
-    r = json.loads(req.text)
-    forecasts = r['properties']['periods']
-    try:
-        days
-    except:
-        days = len(forecasts)
-    
-    for i in range(min(days, len(forecasts))):
-        day = forecasts[i]
-        full_msg += '{}: {}F, {}\n'.format(day['name'], day['temperature'], day['shortForecast'])
-    await ctx.send(full_msg)
-
-@bot.command()
-async def game(ctx, role: discord.Role):
-    print('placeholder')
-#run
-bot.run('OTgxMDM1MjEyMzE2MjMzNzg5.G8ZdQ4.p8gij5Rr_wtTPg_Fyv4KI4ghouSSS7THhHAfnY')
+from dotenv import main
+main.load_dotenv()
+BLUBOT_API_TOKEN = os.environ.get('BLUBOT_API_TOKEN')
+try:
+    bot.run(BLUBOT_API_TOKEN)
+except:
+    print("bot didn't run somehow")
