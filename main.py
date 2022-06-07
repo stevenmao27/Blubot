@@ -9,6 +9,9 @@ import asyncio
 import datetime
 import os
 
+database = {
+    'loop': 0
+}
 TERMINATION_KEYWORDS = ['stop', 'here', 'ok', 'aqui', 'alright', 'coming', 'oi', 'e']
 
 intents = discord.Intents().all()
@@ -26,6 +29,9 @@ async def on_message(msg):
     msg_text = msg.content
     
     #for .spam command
+    if msg_text in TERMINATION_KEYWORDS:
+        database['loop'] = 999
+
     if msg_text.lower() == 'hi blubot':
         await msg.channel.send('hi ' + msg.author.name + '!')
 
@@ -41,7 +47,7 @@ async def on_message(msg):
     await bot.process_commands(msg)
 
 @bot.event
-async def on_command_error(error, ctx):
+async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
         await ctx.send('you used the command wrong')
 
@@ -52,6 +58,18 @@ async def on_command_error(error, ctx):
 ################################################
 ################################################
 
+#help
+@bot.command()
+async def helpme(ctx):
+    await ctx.message.delete()
+    msg = '```Commands (prefix= . ):\n.ping [@user]'
+    msg += '\n.spam [@user] [number of times (1/sec)] note: anyone can reply to stop spam'
+    msg += '\n.bombtimer [@user] [minutes] [(optional) seconds] ["custom message"] note: only victim can reply to stop timer'
+    msg += "\n.weather days=[number of entries] loc=[specific_location] coods=[29.38472,-95.23413] note: i don't know why i made this"
+    msg += '\n.cf note: flip a coin!'
+    msg += '\n.game [@role] [(optional) max_team_size] note: fully functional!```'
+    await ctx.send(msg)
+    
 #ping
 @bot.command()
 async def ping(ctx, user:discord.User):
@@ -99,6 +117,43 @@ async def bombtimer(ctx, user: discord.User, minutes: int, seconds: int = 0, cus
         await ctx.invoke(bot.get_command('spam'), user=user, repeats=minutes)
     else:
         await ctx.send(SUCCESS_MSG.format(user.mention))
+
+#weather
+@bot.command()
+async def weather(ctx, *args):
+    await ctx.message.delete()
+    full_msg = '```'
+    houses = {
+        #Basically Missouri City
+        "Missouri_City": 'https://api.weather.gov/gridpoints/HGX/56,87/forecast'
+    }
+    loc_name = "steven's_house"
+    for val in args:
+        if val[:4] == 'days':
+            days = int(val[5:])
+        elif val[:3] == 'loc':
+            loc_name = val[4:]
+        elif val[:5] == 'coods':
+            coordinates = val[6:]
+            temp_req = requests.get('https://api.weather.gov/points/{}'.format(coordinates))
+            temp_r = json.loads(temp_req.text)
+            houses['new_loc'] = temp_r['properties']['forecast']
+            loc_name = 'new_loc'
+    
+    loc = houses[loc_name]
+    req = requests.get(loc)
+    r = json.loads(req.text)
+    forecasts = r['properties']['periods']
+    try:
+        days
+    except:
+        days = len(forecasts)
+    
+    for i in range(min(days, len(forecasts))):
+        day = forecasts[i]
+        full_msg += '{}: {}F, {}\n'.format(day['name'], day['temperature'], day['shortForecast'])
+    full_msg += '```'
+    await ctx.send(full_msg)
 
 from dotenv import main
 main.load_dotenv()
