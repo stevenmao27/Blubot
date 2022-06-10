@@ -35,14 +35,12 @@ async def on_message(msg):
     if msg_text.lower() == 'hi blubot':
         await msg.channel.send('hi ' + msg.author.name + '!')
 
-    if msg_text.lower().startswith('fuck') and ('you' in msg_text or 'u' in msg_text):
-        await msg.channel.send('well fuck you ' + msg.author.name + ' eat shit')
-
     if msg_text.startswith('gimme') and msg_text.split(' ')[1][0].isnumeric():
         minutes = int(msg_text.split(' ')[1]) if 'ish' not in msg_text.split(' ') else int(msg_text.split(' ')[1]) * (1 + random.randint(3,7)/10.)
         #get_context() itself is an coroutine obj, but somehow returns as a context obj
         context_obj = await bot.get_context(msg)
         await context_obj.invoke(bot.get_command('bombtimer'), user=msg.author, minutes=minutes, seconds=0, custom_message='{} set a timer that will blow at {}:{}')
+    
     #allows commands
     await bot.process_commands(msg)
 
@@ -69,7 +67,7 @@ async def helpme(ctx):
     msg += '\n.cf note: flip a coin!'
     msg += '\n.game [@role] [(optional) max_team_size] note: fully functional!```'
     await ctx.send(msg)
-    
+
 #ping
 @bot.command()
 async def ping(ctx, user:discord.User):
@@ -83,9 +81,11 @@ async def spam(ctx, user: discord.User, repeats: int):
         return
     await ctx.send('spamming {} {} times'.format(user.name, repeats))
     #func
-    for x in range(repeats):
-        await ctx.send(user.mention)
+    while database['loop'] < repeats:
+        await ctx.send(user.mention, delete_after=repeats)
         await asyncio.sleep(1)
+        database['loop'] += 1
+    database['loop'] = 0
 
 #bombtimer
 @bot.command()
@@ -127,7 +127,7 @@ async def weather(ctx, *args):
         #Basically Missouri City
         "Missouri_City": 'https://api.weather.gov/gridpoints/HGX/56,87/forecast'
     }
-    loc_name = "steven's_house"
+    loc_name = "Missouri_City"
     for val in args:
         if val[:4] == 'days':
             days = int(val[5:])
@@ -154,6 +154,46 @@ async def weather(ctx, *args):
         full_msg += '{}: {}F, {}\n'.format(day['name'], day['temperature'], day['shortForecast'])
     full_msg += '```'
     await ctx.send(full_msg)
+
+#coinflip
+class CoinflipView(discord.ui.View):
+    def __init__(self, heads, tails):
+        super().__init__()
+        self.total_heads = heads
+        self.total_tails = tails
+        self.vals = {0: '🗣️ Heads', 1: '🪙 Tails'}
+        self.recent_result = None
+        self.E_down = False
+        self.emojiBank = ['😩','😊','🤣','❤️','😁','😘','😳','😎','🪙','👌','🤐','😣','😏','🤑','🙃']
+    def updated_message(self):
+        return f'You flipped **{self.vals[self.recent_result]}!** `Your head:tail ratio is {self.total_heads}:{self.total_tails}`'
+    @discord.ui.button(label="FLIP ME", style=discord.ButtonStyle.primary, emoji='😩')
+    async def button_callback(self, button, interaction):
+        button.emoji = self.emojiBank[random.randint(0, len(self.emojiBank) - 1)]
+        if len(button.label) < 80 and not self.E_down:
+            button.label += 'E'
+        else:
+            button.label = button.label[:len(button.label) - 1]
+        if len(button.label) == 80 or len(button.label) == 7:
+            self.E_down = not self.E_down
+
+        self.recent_result = random.randint(0,1)
+        if self.recent_result == 0:
+            self.total_heads += 1
+        else:
+            self.total_tails += 1
+        await interaction.response.edit_message(content=self.updated_message(), view=self) #add view b/c need to update view
+
+@bot.command()
+async def cf(ctx):
+    await ctx.message.delete()
+    print('.cf called')
+    first_roll = random.randint(0,1)
+    heads = 1 if first_roll == 0 else 0
+    tails = 1 if first_roll == 1 else 0
+    first_result = '🗣️ Heads' if first_roll == 0 else '🪙 Tails'
+    message_string = f'You flipped **{first_result}!** `Your head:tail ratio is {heads}:{tails}`'
+    await ctx.send(message_string, view=CoinflipView(heads, tails))
 
 from dotenv import main
 main.load_dotenv()
