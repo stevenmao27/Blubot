@@ -6,7 +6,7 @@ import json
 import time
 import random
 import asyncio
-import datetime
+from datetime import timedelta, datetime
 import os
 
 database = {
@@ -48,8 +48,7 @@ async def on_message(msg):
 @bot.event
 async def on_command_error(ctx, error):
     if isinstance(error, commands.CommandNotFound):
-        await ctx.send('you used the command wrong')
-
+        await ctx.send('you used the command wrong', delete_after=2)
 
 ################################################
 ################################################
@@ -68,11 +67,6 @@ async def helpme(ctx):
     msg += '\n.cf note: flip a coin!'
     msg += '\n.game [@role] [(optional) max_team_size] note: fully functional!```'
     await ctx.send(msg)
-
-#ping
-@bot.command()
-async def ping(ctx, user:discord.User):
-    await ctx.send(user.mention)
 
 #spam
 @bot.command()
@@ -125,8 +119,8 @@ async def weather(ctx, *args):
     await ctx.message.delete()
     full_msg = '```'
     houses = {
-        #Basically Missouri City
-        "Missouri_City": 'https://api.weather.gov/gridpoints/HGX/56,87/forecast'
+        
+        
     }
     loc_name = "Missouri_City"
     for val in args:
@@ -185,7 +179,7 @@ class CoinflipView(discord.ui.View):
             self.total_tails += 1
         await interaction.response.edit_message(content=self.updated_message(), view=self) #add view b/c need to update view
 
-@bot.command()
+@bot.command(aliases=['coinflip'])
 async def cf(ctx):
     await ctx.message.delete()
     print('.cf called')
@@ -327,6 +321,8 @@ class PollInterface(discord.ui.View):
             #full_string += f'"{choice}"\n    {", ".join(members)}' #shows name MEMBERS ARE OBJECTS NOT STRINGS YET
             diff = (max(self.lengths) - self.lengths[self.choices.index(choice)]) * ' '
             full_string += f'"{choice}": {diff}{len(members)} votes\n'
+            for member in members:
+                full_string += f'{diff}{member}\n'
         return full_string + '```'
 
 #poll
@@ -337,6 +333,27 @@ async def poll(ctx, question, *choices):
     await ctx.message.delete()
     print('called .poll')
     await ctx.send('```' + question + '```', view = PollInterface(ctx, question, choices))
+
+@bot.command()
+async def timer(ctx, *args):
+    await ctx.message.delete()
+    seconds = 0
+    try:
+        for elem in args:
+            #for minutes
+            if elem[-1] == 'm':
+                seconds += 60 * int(elem[:-1])
+            elif elem[-1] == 's':
+                seconds += int(elem[:-1])
+            elif elem.isdigit():
+                seconds += int(elem)
+    except Exception as e:
+        print('.timer error:', e)
+        await ctx.respond('Bad Input', ephemeral=True, delete_after=2)
+    
+    await ctx.send(f"⌛Starting {ctx.author.mention}'s timer of {seconds} seconds⌛")
+    await asyncio.sleep(seconds)
+    await ctx.send(f'🔔Your {seconds} seconds is up!🔔')
 
 #run
 from dotenv import main
