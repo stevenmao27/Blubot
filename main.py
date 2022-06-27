@@ -15,7 +15,7 @@ database = {
 TERMINATION_KEYWORDS = ['stop', 'here', 'ok', 'aqui', 'alright', 'coming', 'oi', 'e']
 
 intents = discord.Intents().all()
-bot = commands.Bot(command_prefix='.', intents=intents)
+bot = commands.Bot(debug_guilds=[523693679341207552, 783391965525049384, 784497167578300468], command_prefix='.', intents=intents)
 bot.load_extension('music_module')
 
 @bot.event
