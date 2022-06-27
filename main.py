@@ -1,15 +1,20 @@
-from wsgiref import headers
+print('Printing to console log: main.py has started.')
 import discord
+print('discord done')
 from discord.ext import commands
+print('discord commands done')
 import requests
+print('requests done')
 import json
 import time
 import random
 import asyncio
+print('json, time, random, asyncio done')
 from datetime import timedelta, datetime
 import os
+print('all imports done')
 
-print('Printing to console log: main.py has started.')
+print('Printing to console log: imports have completed, program is starting.')
 
 database = {
     'loop': 0
