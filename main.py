@@ -9,6 +9,8 @@ import asyncio
 from datetime import timedelta, datetime
 import os
 
+print('Printing to console log: main.py has started.')
+
 database = {
     'loop': 0
 }
