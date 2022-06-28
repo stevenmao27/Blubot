@@ -1,6 +1,7 @@
 import discord
 import asyncio
 from discord.ext import commands, tasks
+from discord.commands import slash_command
 from youtube_dl import YoutubeDL
 from datetime import timedelta, datetime
 from collections import deque
