@@ -16,7 +16,6 @@ dbus-python==1.2.16
 discord==1.7.3
 discord.py==1.7.3
 distro==1.4.0
-distro-info===0.23ubuntu1
 docopt==0.6.2
 docutils==0.16
 dotenv-python==0.0.1
@@ -70,8 +69,6 @@ pyOpenSSL==19.0.0
 pyparsing==2.4.6
 pyrsistent==0.15.5
 pyserial==3.4
-python-apt==2.0.0+ubuntu0.20.4.6
-python-debian===0.1.36ubuntu1
 python-dotenv==0.20.0
 python-env==1.0.0
 pytz==2019.3
