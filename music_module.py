@@ -132,6 +132,7 @@ class MCog(commands.Cog):
     #rtype: bool
     #only for first initiation, add guild to database
     async def first_connect(self, ctx):
+        print('Entered first_connect')
         if ctx.guild.id in self.MUSIC_DATABASE: #guild already added
             return False
         else:
