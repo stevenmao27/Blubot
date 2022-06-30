@@ -132,7 +132,7 @@ class MCog(commands.Cog):
     #rtype: bool
     #only for first initiation, add guild to database
     async def first_connect(self, ctx):
-        print('Entered first_connect')
+        print('Called first_connect()')
         if ctx.guild.id in self.MUSIC_DATABASE: #guild already added
             return False
         else:
@@ -383,7 +383,7 @@ class MCog(commands.Cog):
                 await self.MUSIC_DATABASE[ctx.guild.id].client.move_to(ctx.author.voice.channel)
                 print('- moved to new channel!')
         except Exception as err:
-            print('problem is,', err)
+            print('ERROR:', err)
         
         player = self.MUSIC_DATABASE[ctx.guild.id]
 
