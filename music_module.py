@@ -193,7 +193,7 @@ class MCog(commands.Cog):
     @discord.slash_command(description='Send requested song to the back of the queue')
     async def queue(self, ctx, 
         search: discord.Option(str, "Enter Search or URL"), 
-        results: discord.Option(int, "Enter number of results", min_value=1, max_value=25, default=3)
+        results: discord.Option(int, "Enter number of results", min_value=1, max_value=25, default=1)
         ):
         await ctx.defer()
         await self.play_command(ctx, (search,), 'queue', results)
@@ -202,7 +202,7 @@ class MCog(commands.Cog):
     @discord.slash_command(description='Force skips current song and plays requested song')
     async def playnow(self, ctx, 
         search: discord.Option(str, "Enter Search or URL"), 
-        results: discord.Option(int, "Enter number of results", min_value=1, max_value=25, default=3)
+        results: discord.Option(int, "Enter number of results", min_value=1, max_value=25, default=1)
         ):
         await ctx.defer()
         await self.play_command(ctx, (search,), 'playnow', results)
@@ -550,7 +550,11 @@ class ControlPanel(discord.ui.View):
         full_message = f'```autohotkey\nCurrently Playing: "{self.player.currSong.title}" by [{self.player.currSong.channel}] ({self.player.currSong.duration_string})\n\n'
         
         #song progress (time2 - time1) / total_time * 100 * 0.5blocks/percent
-        delta_time = datetime.now() - self.player.time_since_song - self.player.time_offset
+        if self.player.client.is_paused():
+            now = self.player.time_recent_pause
+        else:
+            now = datetime.now()
+        delta_time = now - self.player.time_since_song - self.player.time_offset
 
         minutes, seconds = divmod(delta_time.seconds + delta_time.days * 86400, 60)
         hours, minutes = divmod(minutes, 60)
