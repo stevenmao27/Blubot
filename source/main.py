@@ -1,15 +1,20 @@
-from wsgiref import headers
+print('Printing to console log: main.py has started.')
 import discord
+print('discord done')
 from discord.ext import commands
+print('discord commands done')
 import requests
+print('requests done')
 import json
 import time
 import random
 import asyncio
+print('json, time, random, asyncio done')
 from datetime import timedelta, datetime
 import os
+print('all imports done')
 
-print('Printing to console log: main.py has started.')
+print('Printing to console log: imports have completed, program is starting.')
 
 database = {
     'loop': 0
@@ -47,10 +52,10 @@ async def on_message(msg):
     #allows commands
     await bot.process_commands(msg)
 
-@bot.event
-async def on_command_error(ctx, error):
-    if isinstance(error, commands.CommandNotFound):
-        await ctx.send('you used the command wrong', delete_after=2)
+#@bot.event
+#async def on_command_error(ctx, error):
+#    if isinstance(error, commands.CommandNotFound):
+#        await ctx.send('you used the command wrong', delete_after=2)
 
 ################################################
 ################################################
@@ -65,7 +70,7 @@ async def helpme(ctx):
     msg = '```Commands (prefix= . ):\n.ping [@user]'
     msg += '\n.spam [@user] [number of times (1/sec)] note: anyone can reply to stop spam'
     msg += '\n.bombtimer [@user] [minutes] [(optional) seconds] ["custom message"] note: only victim can reply to stop timer'
-    msg += "\n.weather days=[number of entries] loc=[specific_location] coods=[29.38472,-95.23413] note: i don't know why i made this"
+    msg += "\n.weather days=[number of entries] loc=[specific_location] coods=[29.38472,-95.23413]"
     msg += '\n.cf note: flip a coin!'
     msg += '\n.game [@role] [(optional) max_team_size] note: fully functional!```'
     await ctx.send(msg)
@@ -88,7 +93,7 @@ async def spam(ctx, user: discord.User, repeats: int):
 @bot.command()
 async def bombtimer(ctx, user: discord.User, minutes: int, seconds: int = 0, custom_message: str = ''):
     totalTime = minutes * 60 + seconds
-    INIT_MSG = 'Beginning bomb timer on {} in {} minutes and {} seconds\nReply "stop" to terminate the timer' if custom_message == '' else custom_message
+    INIT_MSG = '🚨Beginning bomb timer on {} in {} minutes and {} seconds\nReply "stop" to terminate the timer🚨' if custom_message == '' else custom_message
     FAIL_MSG = "{} capped, he's not coming back"
     SUCCESS_MSG = 'Welcome back, {}'
     def isStop(m):
@@ -207,7 +212,7 @@ class GameInterface(discord.ui.View):
         final_string = f"**{f'{self.role.mention}' if len(self.players) < self.maxSize else 'TEAM IS NOW FULL'}"
         for i in range(len(self.players)):
             final_string += f'\n{i+1}. {self.players[i]}'
-        final_string += f'{prospective_string}**'
+        final_string += f'\n{prospective_string}**'
         return final_string
 
     @discord.ui.button(label="add", style=discord.ButtonStyle.success)
