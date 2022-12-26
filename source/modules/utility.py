@@ -15,7 +15,7 @@ class UtilityCog(commands.Cog):
         self.bot = bot
     
     @commands.command()
-    async def helpme(ctx):
+    async def helpme(self, ctx):
         myLogger.debug('called .helpme')
         await ctx.message.delete()
         msg = '```Commands (prefix= . ):\n.ping [@user]'
@@ -27,7 +27,7 @@ class UtilityCog(commands.Cog):
         await ctx.send(msg)
     
     @commands.command(aliases=['coinflip'])
-    async def cf(ctx):
+    async def cf(self, ctx):
         myLogger.debug('called .cf')
         await ctx.message.delete()
         first_roll = random.randint(0,1)
@@ -38,7 +38,7 @@ class UtilityCog(commands.Cog):
         await ctx.send(message_string, view=CoinflipView(heads, tails))
 
     @commands.command()
-    async def timer(ctx, *args):
+    async def timer(self, ctx, *args):
         myLogger.debug('called .timer')
         await ctx.message.delete()
         seconds = 0
@@ -68,7 +68,7 @@ class UtilityCog(commands.Cog):
         await ctx.send('spamming {} {} times'.format(user.name, repeats))
         #func
         for i in range(repeats):
-            await ctx.send(user.mention)
+            await ctx.send(user.mention, delete_after=3)
             await asyncio.sleep(1.5)
 
 

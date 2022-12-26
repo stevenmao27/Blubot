@@ -14,7 +14,7 @@ class SocialCog(commands.Cog):
     
     #event holder: create message with one reaction, create reaction-listener that edits/adds names to the message (and deletes)
     @commands.command()
-    async def game(ctx, role: discord.Role, maxSize: int = 5):
+    async def game(self, ctx, role: discord.Role, maxSize: int = 5):
         await ctx.message.delete()
         myLogger.debug('called .game')
         message_string = f'**{f"{role.mention}" if maxSize != 1 else "TEAM IS NOW FULL"}\n1. {ctx.author.mention}**'
@@ -27,7 +27,7 @@ class SocialCog(commands.Cog):
     #choice == 0: defaults to yes/no
     #choice > 0: variable
     @commands.command()
-    async def poll(ctx, question, *choices):
+    async def poll(self, ctx, question, *choices):
         myLogger.debug('called .poll')
         await ctx.message.delete()
         await ctx.send('```' + question + '```', view = PollInterface(ctx, question, choices))
@@ -145,8 +145,12 @@ class PollInterface(discord.ui.View):
         self.choices = choices
         self.author = ctx.author
         self.question = question
-       #self.results = dict{str:list} : {choice1: [members], choice2: [members]...}
-        self.lengths = [len(choice) + 3 for choice in choices]
+        #self.results = dict{str:list} : {choice1: [members], choice2: [members]...}
+        if len(choices) == 0:
+            self.choices = ('yes', 'no')
+            self.lengths = (6, 5)
+        else:
+            self.lengths = tuple([len(choice) + 3 for choice in choices])
 
         #create buttons and an object holding all choices and the supporters
         if len(choices) == 0: #creates yes/no buttons

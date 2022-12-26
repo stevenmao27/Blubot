@@ -16,7 +16,7 @@ class InfoCog(commands.Cog):
     
     #weather
     @commands.command()
-    async def weather(ctx, *args):
+    async def weather(self, ctx, *args):
         myLogger.debug('called .weather')
         await ctx.message.delete()
         full_msg = '```'

@@ -38,7 +38,7 @@ bot.add_cog(SocialCog(bot))
 async def on_ready():
     myLogger.info('Blubot has logged in')
 
-#run
+
 from dotenv import main
 main.load_dotenv()
 BLUBOT_API_TOKEN = os.environ.get('BLUBOT_API_TOKEN')
@@ -46,7 +46,6 @@ try:
     bot.run(BLUBOT_API_TOKEN)
 except:
     myLogger.critical('Blubot failed to run')
-
 
 
 # def displayHandlers():
