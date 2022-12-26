@@ -1,3 +1,23 @@
+#debugging and logging dependencies and setup
+import logging as log
+log.basicConfig(format='[%(levelname)s] %(funcName)s: %(message)s', level=log.INFO)
+
+import sys
+import os
+class NullIO():
+    def write(self):
+        pass
+    def flush():
+        pass
+
+SYSOUT = sys.stdout
+NULLOBJ = NullIO
+def mute_stdout():
+    sys.stdout = NULLOBJ
+def unmute_stdout():
+    sys.stdout = SYSOUT
+
+#discord dependencies
 import discord
 import asyncio
 from discord.ext import commands, tasks
@@ -24,7 +44,7 @@ class Song():
 
 class MusicPlayer():
     def __init__(self):
-        print('MusicPlayer: Creating Music Player')
+        log.debug('Initializing Music Player')
         self.isPlaying = False #refers to song presence. Can isPlaying == True while player.client.is_paused() == True
         self.currSong = None
 
@@ -38,9 +58,12 @@ class MusicPlayer():
         self.recent_ControlPanel = None
     
     async def init_client(self, first_channel):
-        print('running init_client')
-        self.client = await first_channel.connect()
-        print('client connection set!')
+        try:
+            log.debug('Initializing Client Connection')
+            self.client = await first_channel.connect()
+            log.info('Voice Channel Connection Set')
+        except:
+            log.critical('Voice Channel Connection Failed!')
     
     def updateControlPanel(self, new_ControlPanel):
         if self.recent_ControlPanel:
@@ -75,7 +98,7 @@ class MusicPlayer():
     #desc: same as skip + ignores current song, force skips to next
 
     def play_next(self):
-        print('- play_next()')
+        log.debug('playing next')
         self.client.stop()
 
         #cache finished song
@@ -83,18 +106,18 @@ class MusicPlayer():
             self.addCache(self.currSong)
 
         if len(self.queue) > 0:
-            print('found Song in queue...')
+            log.debug('found song(s) in queue. continuing.')
             self.isPlaying = True
             self.currSong = self.queue.popleft()
             currSong_source = self.currSong.source
 
-            print('NOW PLAYING:', self.currSong.title)
             self.reset_timestamp()
             audio_player = discord.FFmpegPCMAudio(currSong_source, **MCog.FFMPEG_OPTIONS)
             self.client.play(audio_player, after = lambda e: self.play_next)
-            print('...play complete')
+            log.info('NOW PLAYING: %s', self.currSong.title)
+
         else:
-            print('nothing left in queue. resetting isPlaying, currSong, client')
+            log.info('found empty queue. resetting and stopping.')
             self.isPlaying = False
             self.currSong = None
             self.client.stop()
@@ -119,41 +142,43 @@ class MCog(commands.Cog):
 
     #checks if interactor is connected and in same channel
     def active_permission_check(self, ctx):
-        print('- permission_check()')
+        log.debug('checking valid permissions')
         try:
             player = self.MUSIC_DATABASE[ctx.guild.id]
             return player.client.is_connected() and ctx.author.voice.channel == player.client.channel and player.isPlaying
         except:
-            print('- active permission check failed, defaulting return to False')
-            #Either 1) Author not connected to channel 2) Guild + Player doesn't exist 3) Guild client not initialized
+            #Either: 1) Author not connected to channel 2) Guild + Player doesn't exist 3) Guild client not initialized
+            log.debug('active permission check failed')
             return False
 
     #preq: guaranteed author connected to channel
     #rtype: bool
     #only for first initiation, add guild to database
     async def first_connect(self, ctx):
-        print('Called first_connect()')
         if ctx.guild.id in self.MUSIC_DATABASE: #guild already added
             return False
         else:
+            log.info('first connection in server. initializing services.')
             #dict{str: MusicPlayer()}
             self.MUSIC_DATABASE[ctx.guild.id] = MusicPlayer()
             await self.MUSIC_DATABASE[ctx.guild.id].init_client(ctx.author.voice.channel)
-            print('- first_connect: Guild Recorded, MusicPlayer Created, Client Initiated, and Connected to Channel!')
+            log.info('Guild Recorded in Database, MusicPlayer Created, Client Initiated and Connected to Channel')
             return True
 
     #rtype: list[Music]
     #desc: returns list of top x song queries OR a single Song
     #ex: self.search_yt(self, ['cat', 'videos', 'q=5'])
     def search_yt(self, args: tuple, num_results = 3):
-        print('called search_yt()')
+        log.info('searching youtube, querying %i results', num_results)
+        error_msg = ''
+        mute_stdout()
         with YoutubeDL(self.YDL_OPTIONS) as ydl:
-            #URL: searches, sends Song
+            #given URL argument, returns first song and its object
             if args[0].startswith('https://www.youtube.com/watch'):
                 try:
                     return Song(ydl.extract_info(args[0], download=False))
                 except:
-                    print('ERROR: URL search failed. URL =', args[0])
+                    error_msg = f'URL search failed. URL = {args[0]}'
 
             #query: check for num_results, searches, sends Song/list[]
             else:
@@ -166,19 +191,14 @@ class MCog(commands.Cog):
                     for i in range(len(top_results)):
                         top_results[i] = Song(top_results[i])
                     
+                    return top_results if len(top_results) > 1 else top_results[0]
+                    
                 except Exception as err:
-                    print(f'SEARCH_YT ERROR\t search="{search_query}" errorType="{type(err).__name__}"')
-                    return False
-                
-                print('- exiting search_yt()')
-                #return
-                if len(top_results) == 1:
-                    return top_results[0]
-                else:
-                    return top_results
-
-            raise Exception
-
+                    error_msg = f'Youtube search failed. searchQuery="{search_query}" errorType="{type(err).__name__}"'
+            
+            unmute_stdout()
+            log.info(error_msg)
+            return False
 
 # slash commands
     @discord.slash_command(description='Sends requested song to the front of the queue')
@@ -370,7 +390,7 @@ class MCog(commands.Cog):
 
 #command function for play, queue, and playnow
     async def play_command(self, ctx, args: tuple, invocation, num_results = 3):
-        print('called play function')
+        log.debug('called play_command()')
 
         #check connection,set guild
         if not ctx.author.voice:
@@ -381,9 +401,9 @@ class MCog(commands.Cog):
         try:
             if not await self.first_connect(ctx) and ctx.author.voice.channel != self.MUSIC_DATABASE[ctx.guild.id].client.channel:
                 await self.MUSIC_DATABASE[ctx.guild.id].client.move_to(ctx.author.voice.channel)
-                print('- moved to new channel!')
+                log.info('client successfully moved to new channel')
         except Exception as err:
-            print('ERROR:', err)
+            log.info("failed. possibilities: bad first connect || couldn't switch channels")
         
         player = self.MUSIC_DATABASE[ctx.guild.id]
 
@@ -429,17 +449,12 @@ class MCog(commands.Cog):
             query_message_content += '```'
 
             try:
-                print('WAITING FOR SONG SELECTION TO QUEUE')
-                query_message = await ctx.send(query_message_content, view=SearchQueryView(finalSong, player, invocation, timeout=30))
+                log.info('awaiting song selection...')
+                await ctx.send(query_message_content, view=SearchQueryView(finalSong, player, invocation, timeout=30))
             except Exception as err:
-                print(err)
+                log.info('query_message_content error: %s', err)
 
             #wait for reply or button press
-            '''
-            def check(msg):
-                return msg.content.isdigit() and int(msg.content) > 0 and int(msg.content) <= len(finalSong)
-            '''
-
             try:
                 msg = await self.bot.wait_for('message', check = lambda msg: msg.content.isdigit() and int(msg.content) > 0 and int(msg.content) <= len(finalSong), timeout = 30)
             except:
@@ -447,6 +462,11 @@ class MCog(commands.Cog):
             else:
                 await msg.delete()
                 finalSong = finalSong[int(msg.content) - 1]
+        
+        #if bad URL or some other search error, search_yt returns False
+        elif type(finalSong) == bool:
+            await ctx.send('Youtube URL Search Failed. Check for Typos or Try Another URL', delete_after=2)
+            return
                 
         #queue and play
         if invocation == 'p' or invocation == 'play':
@@ -461,7 +481,7 @@ class MCog(commands.Cog):
 
     @tasks.loop(seconds=11, count=20)
     async def task_updateControlPanel(self):
-        print('- beginning tasks.loop')
+        log.debug('beginning tasks.loop to update control panel')
         for guildId, player in self.MUSIC_DATABASE.items(): #for every guild, check for existing controlPanel and edit
             if player.recent_ControlPanel and player.isPlaying: #is_finished() useless because timeout=None
                 controlPanel = player.recent_ControlPanel
@@ -472,28 +492,28 @@ class MCog(commands.Cog):
         #clean up inactive guilds
         for guildId, player in self.MUSIC_DATABASE.items():
             if not (player.isPlaying or player.client.is_connected()):
-                print(f'deleting player in guild {guildId}')
+                log.info('deleting music player in guild %s', guildId)
                 del self.MUSIC_DATABASE[guildId]
 
         if len(self.MUSIC_DATABASE) > 0:
-            print('restarting tasks.loop')
+            log.debug('restarting tasks.loop')
             self.task_updateControlPanel.restart()
     
     @discord.slash_command(description='Lists details of Music Cog Module Commands')
     async def help_music(self, ctx):
-        message = '`[ Help Commands for Music Controls ]`\n'
-        message += "`.p or .q or .pn` to join channel but don't play\n"
-        message += '`/leave or .lv or .l` to leave channel\n'
-        message += '`/play [search/URL] [results] or .p [search/URL] -[results]` appends song to front of queue\n- `/play Tchaikovsky Barcarolle` searches for top 3 (default) results\n'
-        message += '`/queue [search/URL] [results] or .q [search/URL] -[results]` appends song to back of queue\n- `.q Moonlight Sonata -1` automatically queues top result\n'
-        message += '`/playnow [search/URL] [results] or .pn [search/URL] -[results]` force play requested song\n- `.p Turkish March -5` searches for top 5 results\n'
-        message += '`/control or .ctrl` brings up control panel; only one can be active at a time\n'
-        message += '`/pause or .ps or .pa or .pu` pauses if song is playing\n'
-        message += '`/resume or .r or .rs` resumes if song is paused\n'
-        message += '`/skip or .sk or .sp or .fw` skips current song\n'
-        message += '`/back or .bk` moves the queue back by one song\n'
-        message += '`/restart or .rst` restarts current song\n'
-        message += '`/clear or .cl or .cr` clears the current queue; will not affect current song'
+        message = "`[ Help Commands for Music Controls ]`\n\
+            `.p or .q or .pn` to join channel but dont play\n\
+            `/leave or .lv or .l` to leave channel\n\
+            `/play [search/URL] [results] or .p [search/URL] -[results]` appends song to front of queue\n- `/play Tchaikovsky Barcarolle` searches for top 3 (default) results\n\
+            `/queue [search/URL] [results] or .q [search/URL] -[results]` appends song to back of queue\n- `.q Moonlight Sonata -1` automatically queues top result\n\
+            `/playnow [search/URL] [results] or .pn [search/URL] -[results]` force play requested song\n- `.p Turkish March -5` searches for top 5 results\n\
+            `/control or .ctrl` brings up control panel; only one can be active at a time\n\
+            `/pause or .ps or .pa or .pu` pauses if song is playing\n\
+            `/resume or .r or .rs` resumes if song is paused\n\
+            `/skip or .sk or .sp or .fw` skips current song\n\
+            `/back or .bk` moves the queue back by one song\n\
+            `/restart or .rst` restarts current song\n\
+            `/clear or .cl or .cr` clears the current queue; will not affect current song"
         await ctx.respond(message)
 
 

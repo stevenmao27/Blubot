@@ -1,20 +1,25 @@
-print('Printing to console log: main.py has started.')
+import logging as log
+# log.FileHandler('logFile.log', mode='w')
+log.basicConfig(format='[%(levelname)s] %(funcName)s(): %(message)s', level=log.INFO)
+discordHandler = log.getLogger('discord')
+discordHandler.setLevel(log.WARNING)
+userHandler = log.getLogger('userHandler')
+
+def displayHandlers():
+    for k,v in  log.Logger.manager.loggerDict.items()  :
+        print('+ [%s] {%s} ' % (str.ljust( k, 20)  , str(v.__class__)[8:-2]) )
+        if not isinstance(v, log.PlaceHolder):
+            for h in v.handlers:
+                print('     +++',str(h.__class__)[8:-2] )
+
 import discord
-print('discord done')
 from discord.ext import commands
-print('discord commands done')
 import requests
-print('requests done')
 import json
-import time
 import random
 import asyncio
-print('json, time, random, asyncio done')
-from datetime import timedelta, datetime
+from datetime import datetime
 import os
-print('all imports done')
-
-print('Printing to console log: imports have completed, program is starting.')
 
 database = {
     'loop': 0
@@ -27,7 +32,7 @@ bot.load_extension('music_module')
 
 @bot.event
 async def on_ready():
-    print('Logged in as', bot.user)
+    userHandler.info('Blubot has logged in')
 
 @bot.event
 async def on_message(msg):
@@ -66,6 +71,7 @@ async def on_message(msg):
 #help
 @bot.command()
 async def helpme(ctx):
+    userHandler.debug('called .helpme')
     await ctx.message.delete()
     msg = '```Commands (prefix= . ):\n.ping [@user]'
     msg += '\n.spam [@user] [number of times (1/sec)] note: anyone can reply to stop spam'
@@ -78,6 +84,7 @@ async def helpme(ctx):
 #spam
 @bot.command()
 async def spam(ctx, user: discord.User, repeats: int):
+    userHandler.debug('called .spam')
     if repeats > 12:
         await ctx.send('abuse is bad, {}'.format(ctx.author.name))
         return
@@ -92,6 +99,7 @@ async def spam(ctx, user: discord.User, repeats: int):
 #bombtimer
 @bot.command()
 async def bombtimer(ctx, user: discord.User, minutes: int, seconds: int = 0, custom_message: str = ''):
+    userHandler.debug('called .bombtimer')
     totalTime = minutes * 60 + seconds
     INIT_MSG = '🚨Beginning bomb timer on {} in {} minutes and {} seconds\nReply "stop" to terminate the timer🚨' if custom_message == '' else custom_message
     FAIL_MSG = "{} capped, he's not coming back"
@@ -123,12 +131,10 @@ async def bombtimer(ctx, user: discord.User, minutes: int, seconds: int = 0, cus
 #weather
 @bot.command()
 async def weather(ctx, *args):
+    userHandler.debug('called .weather')
     await ctx.message.delete()
     full_msg = '```'
-    houses = {
-        
-        
-    }
+    houses = {}
     loc_name = "Missouri_City"
     for val in args:
         if val[:4] == 'days':
@@ -188,8 +194,8 @@ class CoinflipView(discord.ui.View):
 
 @bot.command(aliases=['coinflip'])
 async def cf(ctx):
+    userHandler.debug('called .cf')
     await ctx.message.delete()
-    print('.cf called')
     first_roll = random.randint(0,1)
     heads = 1 if first_roll == 0 else 0
     tails = 1 if first_roll == 1 else 0
@@ -217,7 +223,7 @@ class GameInterface(discord.ui.View):
 
     @discord.ui.button(label="add", style=discord.ButtonStyle.success)
     async def button1_callback(self, button, interaction):
-        print(interaction.user.name, 'pressed e button')
+        userHandler.debug('pressed "add" button')
         #check if roster full
         if len(self.players) >= self.maxSize: 
             await interaction.response.send_message(content='The roster is full!', delete_after=1)
@@ -232,7 +238,7 @@ class GameInterface(discord.ui.View):
 
     @discord.ui.button(label="remove", style=discord.ButtonStyle.danger)
     async def button2_callback(self, button, interaction):
-        print(interaction.user.name, 'pressed dip button')
+        userHandler.debug('pressed "remove" button')
         #check if you're in the roster, if so, delete, if not, don't say much
         if interaction.user.mention in self.players:
             del self.players[self.players.index(interaction.user.mention)]
@@ -242,7 +248,7 @@ class GameInterface(discord.ui.View):
     
     @discord.ui.button(label="perhaps", style=discord.ButtonStyle.secondary)
     async def button3_callback(self, button, interaction):
-        print(interaction.user.name, 'pressed prospective button')
+        userHandler.debug('pressed "perhaps" button')
         #if in roster, delete from list, add to prospective
         if interaction.user.mention in self.players:
             del self.players[self.players.index(interaction.user.mention)]
@@ -260,7 +266,7 @@ class GameInterface(discord.ui.View):
 @bot.command()
 async def game(ctx, role: discord.Role, maxSize: int = 5):
     await ctx.message.delete()
-    print('.game called')
+    userHandler.debug('called .game')
     message_string = f'**{f"{role.mention}" if maxSize != 1 else "TEAM IS NOW FULL"}\n1. {ctx.author.mention}**'
     #input error verification
     if maxSize < 1 or maxSize > 20:
@@ -337,12 +343,13 @@ class PollInterface(discord.ui.View):
 #>0 choices: variable
 @bot.command()
 async def poll(ctx, question, *choices):
+    userHandler.debug('called .poll')
     await ctx.message.delete()
-    print('called .poll')
     await ctx.send('```' + question + '```', view = PollInterface(ctx, question, choices))
 
 @bot.command()
 async def timer(ctx, *args):
+    userHandler.debug('called .timer')
     await ctx.message.delete()
     seconds = 0
     try:
@@ -355,7 +362,7 @@ async def timer(ctx, *args):
             elif elem.isdigit():
                 seconds += int(elem)
     except Exception as e:
-        print('.timer error:', e)
+        userHandler.debug('caught bad input for .timer')
         await ctx.respond('Bad Input', ephemeral=True, delete_after=2)
     
     await ctx.send(f"⌛Starting {ctx.author.mention}'s timer of {seconds} seconds⌛")
@@ -369,4 +376,4 @@ BLUBOT_API_TOKEN = os.environ.get('BLUBOT_API_TOKEN')
 try:
     bot.run(BLUBOT_API_TOKEN)
 except:
-    print("bot didn't run somehow")
+    userHandler.critical('Blubot failed to run')
