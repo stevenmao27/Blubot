@@ -1,21 +1,17 @@
+"""Contains all dependencies for playing music on Discord
+
+Mcog: Class containing all constants, the bot itself, the collection of MusicPlayers, and commands/helper functions
+Song: object that contains all details of a particular youtube song
+MusicPlayer: object unique to each server; keeps track of music queue, timestamp, cache of old songs, and current Control Panel View
+SearchQueryView: a View object containing the buttons
+SearchQueryButton: object that contains its respective song and MusicPlayer; handles callbacks calls functions similar to user commands
+ControlPanel: a View object with entire Control Panel functionality, owned by MusicPlayer
+"""
+
 #debugging and logging dependencies and setup
 import logging as log
 log.basicConfig(format='[%(levelname)s] %(funcName)s: %(message)s', level=log.INFO)
-
-import sys
-import os
-class NullIO():
-    def write(self):
-        pass
-    def flush():
-        pass
-
-SYSOUT = sys.stdout
-NULLOBJ = NullIO
-def mute_stdout():
-    sys.stdout = NULLOBJ
-def unmute_stdout():
-    sys.stdout = SYSOUT
+import null_buffer as nb
 
 #discord dependencies
 import discord
@@ -33,6 +29,12 @@ from random import sample
 #   async def foo(ctx)  -> async def foo(self, ctx)
 #   bot                 -> self.bot 
 
+
+
+
+
+
+
 class Song():
     def __init__(self, entry):
         self.title = entry['title']
@@ -41,6 +43,12 @@ class Song():
         self.url = entry['webpage_url']
         self.duration_seconds = max(1, int(entry['duration']))
         self.duration_string = str(timedelta(seconds=self.duration_seconds))
+
+
+
+
+
+
 
 class MusicPlayer():
     def __init__(self):
@@ -130,6 +138,10 @@ class MusicPlayer():
 
 
 
+
+
+
+
 class MCog(commands.Cog):
     #universal attributes
     YDL_OPTIONS = {'format': 'bestaudio/best', 'noplaylist': 'True', }
@@ -171,7 +183,7 @@ class MCog(commands.Cog):
     def search_yt(self, args: tuple, num_results = 3):
         log.info('searching youtube, querying %i results', num_results)
         error_msg = ''
-        mute_stdout()
+        nb.mute_stdout()
         with YoutubeDL(self.YDL_OPTIONS) as ydl:
             #given URL argument, returns first song and its object
             if args[0].startswith('https://www.youtube.com/watch'):
@@ -196,7 +208,7 @@ class MCog(commands.Cog):
                 except Exception as err:
                     error_msg = f'Youtube search failed. searchQuery="{search_query}" errorType="{type(err).__name__}"'
             
-            unmute_stdout()
+            nb.unmute_stdout()
             log.info(error_msg)
             return False
 
@@ -389,7 +401,7 @@ class MCog(commands.Cog):
         await self.play_command(ctx, args, invocation)
 
 #command function for play, queue, and playnow
-    async def play_command(self, ctx, args: tuple, invocation, num_results = 3):
+    async def play_command(self, ctx, args: tuple, invocation, num_results: int = 3):
         log.debug('called play_command()')
 
         #check connection,set guild
@@ -522,15 +534,14 @@ class MCog(commands.Cog):
 
 
 
-
 class SearchQueryView(discord.ui.View):
-    def __init__(self, song_list, player, invocation, timeout = None):
+    def __init__(self, song_list: list[Song], player: MusicPlayer, invocation, timeout: int = None):
         super().__init__(timeout = timeout)
         for i in range(len(song_list)):
             self.add_item(SearchQueryButton(self, song_list[i], player, invocation, label=str(i+1), row=(i//5)))
 
 class SearchQueryButton(discord.ui.Button):
-    def __init__(self, view, song: Song, player, invocation, label, style = discord.ButtonStyle.primary, emoji = None, custom_id = None, row = 0):
+    def __init__(self, view, song: Song, player: MusicPlayer, invocation, label, style = discord.ButtonStyle.primary, emoji = None, custom_id = None, row = 0):
         super().__init__(label=label, style=style, custom_id=custom_id, emoji=emoji, row=row)
         self.custom_view = view
         self.song = song
@@ -551,6 +562,10 @@ class SearchQueryButton(discord.ui.Button):
         
         #disable view
         self.view.disable_all_items()
+
+
+
+
 
 
 
