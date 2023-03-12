@@ -4,7 +4,7 @@ myLogger = log.getLogger('myLogger')
 
 
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import asyncio
 import random
 import datetime
@@ -12,7 +12,7 @@ import datetime
 
 class FunCog(commands.Cog):
     
-    TERMINATION_KEYWORDS = ['stop', 'here', 'ok', 'aqui', 'alright', 'coming', 'oi', 'e']
+    TERMINATION_KEYWORDS = ['stop', 'here', 'ok', 'aqui', 'alright', 'coming', 'oi', 'e', 'hi']
     
     def __init__(self, bot):
         self.bot = bot
@@ -25,17 +25,17 @@ class FunCog(commands.Cog):
         msg_text = msg.content
         
         #for .spam command
-        if msg_text in FunCog.TERMINATION_KEYWORDS:
-            self.loop_counter = 999
+        # if msg_text in FunCog.TERMINATION_KEYWORDS:
+        #     self.loop_counter = 999
 
-        elif msg_text.lower() == 'hi blubot':
-            await msg.channel.send('hi ' + msg.author.name + '!')
+        if msg_text.lower() == 'hi blubot':
+            await msg.channel.send(f'Hi {msg.author.name}!')
 
-        elif msg_text.startswith('gimme') and msg_text.split(' ')[1][0].isnumeric():
-            minutes = int(msg_text.split(' ')[1]) if 'ish' not in msg_text.split(' ') else int(msg_text.split(' ')[1]) * (1 + random.randint(3,7)/10.)
-            #get_context() itself is an coroutine obj, but somehow returns as a context obj
-            context_obj = await self.bot.get_context(msg)
-            await context_obj.invoke(self.bot.get_command('bombtimer'), user=msg.author, minutes=minutes, seconds=0, custom_message='{} set a timer that will blow at {}:{}')
+        # elif msg_text.startswith('gimme') and msg_text.split(' ')[1][0].isnumeric():
+        #     minutes = int(msg_text.split(' ')[1]) if 'ish' not in msg_text.split(' ') else int(msg_text.split(' ')[1]) * (1 + random.randint(3,7)/10.)
+        #     #get_context() itself is an coroutine obj, but somehow returns as a context obj
+        #     context_obj = await self.bot.get_context(msg)
+        #     await context_obj.invoke(self.bot.get_command('bombtimer'), user=msg.author, minutes=minutes, seconds=0, custom_message='{} set a timer that will blow at {}:{}')
 
     #bombtimer
     @commands.command()
@@ -43,7 +43,7 @@ class FunCog(commands.Cog):
         myLogger.debug('called .bombtimer')
         totalTime = minutes * 60 + seconds
         INIT_MSG = '🚨Beginning bomb timer on {} in {} minutes and {} seconds\nReply "stop" to terminate the timer🚨' if custom_message == '' else custom_message
-        FAIL_MSG = "{} capped, he's not coming back"
+        FAIL_MSG = "{} lied."
         SUCCESS_MSG = 'Welcome back, {}'
         def isStop(m):
             if m.content in self.TERMINATION_KEYWORDS:

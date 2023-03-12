@@ -7,18 +7,13 @@ myLogger = log.getLogger('myLogger')
 
 
 import discord
-from discord.ext import commands
-import requests
-import json
-import random
-import asyncio
-from datetime import datetime
+import discord.ext.bridge as bridge
 import os
 
 
 # Set up bot
 intents = discord.Intents().all()
-bot = commands.Bot(debug_guilds=[523693679341207552, 783391965525049384, 784497167578300468], command_prefix='.', intents=intents)
+bot = bridge.Bot(debug_guilds=[523693679341207552, 783391965525049384, 784497167578300468, 1078177604374380574], command_prefix='.', intents=intents)
 
 
 # Import Cogs
@@ -27,11 +22,13 @@ from modules.miscellaneous import *
 from modules.info import *
 from modules.utility import *
 from modules.game_poll import *
-bot.add_cog(MCog(bot))
-bot.add_cog(FunCog(bot))
-bot.add_cog(InfoCog(bot))
+from modules.todo import *
+# bot.add_cog(MCog(bot))
+# bot.add_cog(FunCog(bot))
+# bot.add_cog(InfoCog(bot))
 bot.add_cog(UtilityCog(bot))
 bot.add_cog(SocialCog(bot))
+bot.add_cog(TodoCog(bot))
 
 
 @bot.event
