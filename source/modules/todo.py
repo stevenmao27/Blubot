@@ -1,6 +1,6 @@
 import logging
 from typing import ItemsView
-logging.basicConfig(format='[%(levelname)s] %(funcName)s(): %(message)s', level=logging.INFO)
+logging.basicConfig(format='[%(levelname)s] %(funcName)s(): %(message)s', level=logging.DEBUG)
 log = logging.getLogger('myLogger')
 
 import discord
@@ -19,6 +19,7 @@ class TodoCog(discord.Cog):
         embed = discord.Embed(title=title, description="You have initialized a new todo list!", color=discord.Color.brand_green())
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar)
         await ctx.send(embed=embed, view=TodoApp(title, ctx.author))
+        await ctx.reply("Todo list created!", delete_after=3)
 
 class TodoApp(discord.ui.View):
     
@@ -44,19 +45,22 @@ class TodoApp(discord.ui.View):
     
     # syncs embed with select menu
     async def add_task(self, label: str, value: str):
+        log.debug(f'adding task: {label} ({value})')
         self.select_menu.add_item(label, value, Direction.TOP)
         self.embed.fields.insert(0, discord.EmbedField(name=label, value=value, inline=False))
         if self.message:
             await self.message.edit(embed=self.embed, view=self)
     
-    async def remove_task(self, description: str):
-        i = self.get_task_index(description)
+    async def remove_task(self, description: str, knownIndex: int = -1):
+        log.debug(f'removing task: {description} (if index known, {knownIndex})')
+        i = self.get_task_index(description) if knownIndex == -1 else knownIndex
         self.select_menu.remove_item(i)
         self.embed.remove_field(i)
         if self.message:
             await self.message.edit(embed=self.embed, view=self)
     
     async def complete_task(self, description: str):
+        log.debug(f'completing task: {description}')
         i = self.get_task_index(description)
         field_object = self.embed.fields[i]
         
@@ -69,6 +73,7 @@ class TodoApp(discord.ui.View):
         if field_object.value != '':
             field_object.value = f'~~{field_object.value}~~'
         
+        log.debug(f'new field: {field_object.name} ({field_object.value})')
         # reinsert item
         self.select_menu.add_item(field_object.name, field_object.value, Direction.BOTTOM)
         self.embed.append_field(field_object)
@@ -77,6 +82,7 @@ class TodoApp(discord.ui.View):
             await self.message.edit(embed=self.embed, view=self)
     
     async def restore_task(self, description: str):
+        log.debug(f'restoring task: {description}')
         i = self.get_task_index(description)
         field_object = self.embed.fields[i]
         
@@ -89,6 +95,7 @@ class TodoApp(discord.ui.View):
         if field_object.value != '':
             field_object.value = field_object.value[2:-2]
         
+        log.debug(f'new field: {field_object.name} ({field_object.value})')
         # reinsert item
         self.select_menu.add_item(field_object.name, field_object.value, Direction.TOP)
         self.embed.fields.insert(0, field_object)
@@ -102,7 +109,11 @@ class TodoApp(discord.ui.View):
     async def add(self, button, interaction):
         await interaction.response.send_modal(AddItemPrompt(self, title="Add Item"))
     
-    @discord.ui.button(emoji='✖️', label='Clear Tasks', style=discord.ButtonStyle.danger)
+    @discord.ui.button(emoji='✖️', label='Delete Tasks', style=discord.ButtonStyle.danger)
+    async def delete(self, button, interaction):
+        await interaction.response.send_modal(DeleteItemPrompt(self, title="Delete Item"))
+    
+    @discord.ui.button(emoji='🗑️', label='Clear Tasks', style=discord.ButtonStyle.primary)
     async def clear(self, button, interaction):
         # reset embed
         self.embed = discord.Embed(title=self.title, color=discord.Color.brand_green())
@@ -134,8 +145,6 @@ class SelectMenu(discord.ui.Select):
         self.options = [discord.SelectOption(label="Null Option")]
         self.parent = view
     
-    
-    
     def add_item(self, label: str, value: str, direction: Direction = Direction.BOTTOM):
         if self.options[0].label == "Null Option":
             self.options = []
@@ -155,10 +164,16 @@ class SelectMenu(discord.ui.Select):
     
     async def callback(self, interaction: discord.Interaction):
         description = f'{self.values[0]}'
-        if description[-2:] == '~~':
-            await self.parent.restore_task(self.values[0])
-        elif description != 'Null Option':
-            await self.parent.complete_task(self.values[0])
+        log.debug(f'selectmenu callback: {description}')
+        if description == 'Null Option':
+            return
+        elif description[:2] != '~~':
+            await self.parent.complete_task(description)
+        elif description[:2] == '~~':
+            await self.parent.restore_task(description)
+        else:
+            log.error(f'invalid selectmenu option: {description}')
+            
         await interaction.response.defer()
 
 class AddItemPrompt(discord.ui.Modal):
@@ -171,16 +186,31 @@ class AddItemPrompt(discord.ui.Modal):
             placeholder="Enter item title"
             ))
         self.add_item(discord.ui.InputText(
-            label="Description (OPTIONAL)", 
-            placeholder="Enter a description for the item", 
-            style=discord.InputTextStyle.long,
-            required=False
+            label="Description", 
+            placeholder="Enter a brief description for the item", 
+            style=discord.InputTextStyle.long
             ))
     
     async def callback(self, interaction: discord.Interaction):
+        log.debug(f"Adding task: {self.children[0].value} - {self.children[1].value}")
         todo_title = '⬜   ' + self.children[0].value if self.children[0].value else ""
         todo_description = self.children[1].value if self.children[1].value else ""
         await self.view.add_task(todo_title, todo_description)
         await interaction.response.defer()
             
-            
+class DeleteItemPrompt(discord.ui.Modal):
+    
+    def __init__(self, view: TodoApp, *args, **kwargs):
+        super().__init__(timeout=None, *args, **kwargs)
+        self.view = view
+        self.add_item(discord.ui.InputText(
+            label="Index", 
+            placeholder="Enter the index of the item to remove [1 - n]"
+            ))
+        
+    async def callback(self, interaction: discord.Interaction):
+        if not self.children[0].value:
+            self.children[0].value = '1'
+            log.exception("No value provided for index")
+        await self.view.remove_task('', int(self.children[0].value) - 1)
+        await interaction.response.defer()

@@ -1,6 +1,6 @@
 import logging as log
 # log.FileHandler('logFile.log', mode='w')
-log.basicConfig(format='[%(levelname)s] %(funcName)s(): %(message)s', level=log.INFO)
+log.basicConfig(format='[%(levelname)s] %(funcName)s(): %(message)s', level=log.DEBUG)
 discordHandler = log.getLogger('discord')
 discordHandler.setLevel(log.WARNING)
 myLogger = log.getLogger('myLogger')
