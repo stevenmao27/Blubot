@@ -14,7 +14,7 @@ class GameCog(discord.Cog):
         self.bot = bot
     
     #event holder: create message with one reaction, create reaction-listener that edits/adds names to the message (and deletes)
-    @bridge.bridge_command()
+    @bridge.bridge_command(description='Create a roster list with a given max size.')
     async def game(self, ctx, role: str, maxsize: int = 5):
         myLogger.debug('called .game')
         

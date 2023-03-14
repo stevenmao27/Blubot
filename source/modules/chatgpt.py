@@ -17,7 +17,7 @@ class ChatGPTCog(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
         
-    @bridge.bridge_command()
+    @bridge.bridge_command(description='Send a chat prompt to GPT-3.5-Turbo.')
     async def chatgpt(self, ctx, prompt: str, temperature: float = 1):
         log.debug(f"chatgpt command called by {ctx.author} in {ctx.channel} with prompt: {prompt} and temperature: {temperature}")
         await ctx.defer()

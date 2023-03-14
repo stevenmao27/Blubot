@@ -4,17 +4,17 @@ myLogger = log.getLogger('myLogger')
 
 
 import discord
-from discord.ext import commands
+import discord.ext.bridge as bridge
 
 
-class PollCog(commands.Cog):
+class PollCog(discord.Cog):
     
     def __init__(self, bot):
         self.bot = bot
     
     #choice == 0: defaults to yes/no
     #choice > 0: variable
-    @commands.command()
+    @bridge.bridge_command(description='Create a poll.')
     async def poll(self, ctx, question, *choices):
         myLogger.debug('called .poll')
         await ctx.message.delete()

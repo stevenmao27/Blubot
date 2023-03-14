@@ -14,7 +14,7 @@ class TodoCog(discord.Cog):
     def __init__(self, bot):
         self.bot = bot
         
-    @bridge.bridge_command()
+    @bridge.bridge_command(description='Create a todo list instance.')
     async def todo(self, ctx, title = "Todo List"):
         embed = discord.Embed(title=title, description="You have initialized a new todo list!", color=discord.Color.brand_green())
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar)

@@ -4,30 +4,25 @@ myLogger = log.getLogger('myLogger')
 
 
 import discord
-from discord.ext import commands, tasks
+import discord.ext.bridge as bridge
 import random
 import asyncio
 
 
-class UtilityCog(commands.Cog):
+class UtilityCog(discord.Cog):
     
     def __init__(self, bot):
         self.bot = bot
+        self.spam_targets = {}
+        self.active_timers = {}
     
-    @commands.command()
-    async def helpme(self, ctx):
-        myLogger.debug('called .helpme')
-        await ctx.message.delete()
-        msg = '```Commands (prefix= . ):\n.ping [@user]'
-        msg += '\n.spam [@user] [number of times (1/sec)] note: anyone can reply to stop spam'
-        msg += '\n.bombtimer [@user] [minutes] [(optional) seconds] ["custom message"] note: only victim can reply to stop timer'
-        msg += "\n.weather days=[number of entries] loc=[specific_location] coods=[29.38472,-95.23413]"
-        msg += '\n.cf note: flip a coin!'
-        msg += '\n.game [@role] [(optional) max_team_size] note: fully functional!```'
-        await ctx.send(msg)
+    @discord.Cog.listener()
+    async def on_message(self, message):
+        if message.author in self.spam_targets:
+            self.spam_targets[message.author] = True
     
-    @commands.command(aliases=['coinflip'])
-    async def cf(self, ctx):
+    @bridge.bridge_command(aliases=['cf'], description='Flips a coin')
+    async def coinflip(self, ctx):
         myLogger.debug('called .cf')
         await ctx.message.delete()
         first_roll = random.randint(0,1)
@@ -37,37 +32,33 @@ class UtilityCog(commands.Cog):
         message_string = f'You flipped **{first_result}!** `Your head:tail ratio is {heads}:{tails}`'
         await ctx.send(message_string, view=CoinflipView(heads, tails))
 
-    @commands.command()
-    async def timer(self, ctx, *args):
+    @bridge.bridge_command(description='Starts a timer')
+    async def timer(self, ctx: bridge.BridgeApplicationContext, minutes: int, seconds: int = 0):
         myLogger.debug('called .timer')
-        await ctx.message.delete()
-        seconds = 0
-        try:
-            for elem in args:
-                #for minutes
-                if elem[-1] == 'm':
-                    seconds += 60 * int(elem[:-1])
-                elif elem[-1] == 's':
-                    seconds += int(elem[:-1])
-                elif elem.isdigit():
-                    seconds += int(elem)
-        except Exception as e:
-            myLogger.debug('caught bad input for .timer')
-            await ctx.respond('Bad Input', ephemeral=True, delete_after=2)
+        await ctx.message.delete() # type: ignore
         
-        await ctx.send(f"⌛Starting {ctx.author.mention}'s timer of {seconds} seconds⌛")
+        await ctx.send(f"⌛Starting {ctx.author.name}'s timer of {minutes} minutes and {seconds} seconds⌛")
         await asyncio.sleep(seconds)
-        await ctx.send(f'🔔Your {seconds} seconds is up!🔔')
+        await ctx.send(f'🔔{ctx.author.mention}, {minutes}:{seconds} is up!🔔')
 
-    @commands.command()
-    async def spam(self, ctx, user: discord.User, repeats: int):
+    @bridge.bridge_command(description='Spams a user up to 25 times. Target can interrupt by messaging in the chat.')
+    async def spam(self, ctx: bridge.BridgeApplicationContext, user: discord.User, message: str = '', repeats: int = 7):
         myLogger.debug('called .spam')
-        await ctx.send('spamming {} {} times'.format(user.name, repeats))
-        #func
+        
+        if repeats > 25:
+            await ctx.reply('too many repeats')
+            return
+        
+        await ctx.reply(f'spamming {user.name} {repeats} times')
+        
+        self.spam_targets[user] = False
         for i in range(repeats):
-            await ctx.send(user.mention, delete_after=2)
+            if self.spam_targets[user]:
+                await ctx.send(f'{user.name} has responded. Stopping spam command.')
+                break
+            await ctx.send(user.mention + ' ' + message, delete_after=2)
             await asyncio.sleep(2)
-
+        del self.spam_targets[user]
 
 
 
