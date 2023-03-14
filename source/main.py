@@ -24,6 +24,7 @@ from modules.utility import *
 from modules.game import *
 from modules.poll import *
 from modules.todo import *
+from modules.chatgpt import *
 # bot.add_cog(MCog(bot))
 # bot.add_cog(FunCog(bot))
 # bot.add_cog(InfoCog(bot))
@@ -31,6 +32,7 @@ bot.add_cog(UtilityCog(bot))
 bot.add_cog(GameCog(bot))
 bot.add_cog(PollCog(bot))
 bot.add_cog(TodoCog(bot))
+bot.add_cog(ChatGPTCog(bot))
 
 
 @bot.event
