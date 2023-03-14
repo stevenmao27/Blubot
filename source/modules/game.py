@@ -19,7 +19,7 @@ class GameCog(discord.Cog):
         myLogger.debug('called .game')
         
         if maxsize < 1 or maxsize > 20:
-            await ctx.send('cmdError: .game team size must be between range 1 ≤ maxsize ≤ 20', delete_after=3)
+            await ctx.send('cmdError: .game team size must be between range 1 ≤ maxsize ≤ 20', delete_after=3, ephemeral=True)
             return
         
         roster = "1. {}{}".format(ctx.author.mention, "".join([f"\n{i}. " for i in range(2, maxsize+1)]))
@@ -75,7 +75,7 @@ class GameInterface(discord.ui.View):
         self.update_embed()    
         await interaction.response.edit_message(embed=self.embed)
 
-    @discord.ui.button(emoji='🗑️', label="Leave", style=discord.ButtonStyle.danger)
+    @discord.ui.button(emoji='🗑️', label="Flake", style=discord.ButtonStyle.danger)
     async def button2_callback(self, button, interaction):
         myLogger.debug('pressed "Remove" button')
         user = interaction.user.mention
@@ -116,7 +116,7 @@ class GameInterface(discord.ui.View):
     async def recruit(self, button, interaction):
         log.debug('pressed "Recruit" button')
         if len(self.prospectives) == 0:
-            await interaction.response.send_message(content='There are no prospective players to recruit!', delete_after=3)
+            await interaction.response.send_message(content='There are no prospective players to recruit!', delete_after=3, ephemeral=True)
             return
         
         i = random.randint(0, len(self.prospectives)-1)
