@@ -1,6 +1,6 @@
 import logging as log
 # log.FileHandler('logFile.log', mode='w')
-log.basicConfig(format='[%(levelname)s] %(funcName)s(): %(message)s', level=log.DEBUG)
+log.basicConfig(format='[%(levelname)s] %(funcName)s(): %(message)s', level=log.INFO)
 discordHandler = log.getLogger('discord')
 discordHandler.setLevel(log.WARNING)
 myLogger = log.getLogger('myLogger')
@@ -13,7 +13,7 @@ import os
 
 # Set up bot
 intents = discord.Intents().all()
-bot = bridge.Bot(debug_guilds=[523693679341207552, 783391965525049384, 784497167578300468, 1078177604374380574], command_prefix='.', intents=intents)
+bot = bridge.Bot(debug_guilds=[523693679341207552, 783391965525049384, 784497167578300468, 1078177604374380574], command_prefix='.', intents=intents) # type: ignore
 
 
 # Import Cogs
