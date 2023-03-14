@@ -62,14 +62,11 @@ class UtilityCog(commands.Cog):
     @commands.command()
     async def spam(self, ctx, user: discord.User, repeats: int):
         myLogger.debug('called .spam')
-        if repeats > 12:
-            await ctx.send('abuse is bad, {}'.format(ctx.author.name))
-            return
         await ctx.send('spamming {} {} times'.format(user.name, repeats))
         #func
         for i in range(repeats):
-            await ctx.send(user.mention, delete_after=3)
-            await asyncio.sleep(1.5)
+            await ctx.send(user.mention, delete_after=2)
+            await asyncio.sleep(2)
 
 
 

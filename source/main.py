@@ -21,13 +21,15 @@ from modules.music_player import *
 from modules.miscellaneous import *
 from modules.info import *
 from modules.utility import *
-from modules.game_poll import *
+from modules.game import *
+from modules.poll import *
 from modules.todo import *
 # bot.add_cog(MCog(bot))
 # bot.add_cog(FunCog(bot))
 # bot.add_cog(InfoCog(bot))
 bot.add_cog(UtilityCog(bot))
-bot.add_cog(SocialCog(bot))
+bot.add_cog(GameCog(bot))
+bot.add_cog(PollCog(bot))
 bot.add_cog(TodoCog(bot))
 
 
