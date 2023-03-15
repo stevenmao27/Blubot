@@ -15,24 +15,24 @@ class GameCog(discord.Cog):
     
     #event holder: create message with one reaction, create reaction-listener that edits/adds names to the message (and deletes)
     @bridge.bridge_command(description='Create a roster list with a given max size.')
-    async def game(self, ctx, role: str, maxsize: int = 5):
+    async def game(self, ctx: bridge.BridgeApplicationContext, role: str, maxsize: int = 5):
         myLogger.debug('called .game')
         
         if maxsize < 1 or maxsize > 20:
-            await ctx.send('cmdError: .game team size must be between range 1 ≤ maxsize ≤ 20', delete_after=3, ephemeral=True)
+            await ctx.reply('cmdError: .game team size must be between range 1 ≤ maxsize ≤ 20', delete_after=3, ephemeral=True)
             return
         
         roster = "1. {}{}".format(ctx.author.mention, "".join([f"\n{i}. " for i in range(2, maxsize+1)]))
         embed = discord.Embed(title='Team Roster', description=roster)
         embed.set_author(name=ctx.author.display_name, icon_url=ctx.author.avatar)
         
-        await ctx.send(role, embed=embed, view = GameInterface(embed, role, ctx.author, maxsize))
+        await ctx.reply(role, embed=embed, view = GameInterface(embed, role, ctx.author, maxsize))
     
 
 #View subclass extension
 class GameInterface(discord.ui.View):
     
-    def __init__(self, embed: discord.Embed, role: str, author: discord.User, max_size: int):
+    def __init__(self, embed: discord.Embed, role: str, author: discord.Member | discord.User, max_size: int):
         super().__init__(timeout=None)
         self.embed = embed
         self.role = role
