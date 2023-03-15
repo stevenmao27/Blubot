@@ -116,7 +116,10 @@ class GameInterface(discord.ui.View):
     async def recruit(self, button, interaction):
         log.debug('pressed "Recruit" button')
         if len(self.prospectives) == 0:
-            await interaction.response.send_message(content='There are no prospective players to recruit!', delete_after=3, ephemeral=True)
+            await interaction.response.send_message(content='There are no prospective players to recruit!', delete_after=3)
+            return
+        if len(self.players) == self.max_size:
+            await interaction.response.send_message(content='Sorry, a hiring freeze has been put in place!', delete_after=3)
             return
         
         i = random.randint(0, len(self.prospectives)-1)
