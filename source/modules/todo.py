@@ -187,7 +187,7 @@ class AddItemPrompt(discord.ui.Modal):
             ))
         self.add_item(discord.ui.InputText(
             label="Description", 
-            placeholder="Enter a brief description for the item", 
+            placeholder="Enter a brief description for the item (Max 100 characters)", 
             style=discord.InputTextStyle.long
             ))
     
