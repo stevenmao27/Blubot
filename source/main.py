@@ -13,7 +13,7 @@ import os
 
 # Set up bot
 intents = discord.Intents().all()
-bot = bridge.Bot(debug_guilds=[523693679341207552, 783391965525049384, 784497167578300468, 1078177604374380574], command_prefix='.', intents=intents) # type: ignore
+bot = bridge.Bot(debug_guilds=[523693679341207552, 783391965525049384, 784497167578300468, 1078177604374380574, 1120156902232436756], command_prefix='.', intents=intents) # type: ignore
 
 
 # Import Cogs
@@ -25,7 +25,7 @@ from modules.game import *
 from modules.poll import *
 from modules.todo import *
 from modules.chatgpt import *
-# bot.add_cog(MCog(bot))
+bot.add_cog(MCog(bot))
 # bot.add_cog(FunCog(bot))
 # bot.add_cog(InfoCog(bot))
 bot.add_cog(UtilityCog(bot))
